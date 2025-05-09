@@ -23,31 +23,19 @@ To write a YACC program to recognize a valid variable which starts with a letter
 ```
 %{
 #include "y.tab.h"
-#include <stdio.h>
+#include <string.h>
 %}
 
 %%
-
-"int"           { return INT; }
-"float"         { return FLOAT; }
-"double"        { return DOUBLE; }
-
-[a-zA-Z_][a-zA-Z0-9_]* {
-    printf("Identifier is: %s\n", yytext);
-    return ID;
-}
-
-[ \t]           { /* ignore whitespace */ }
-
-\n              { return '\n'; }
-
-.               { return yytext[0]; }
-
+[a-zA-Z][a-zA-Z0-9]*    { yylval.str = strdup(yytext); return IDENTIFIER; }
+\n                      { return '\n'; }
+.                       { return yytext[0]; }
 %%
 
 int yywrap() {
     return 1;
 }
+
 ```
 
 ## variable_test.y file:
@@ -55,40 +43,36 @@ int yywrap() {
 ```
 %{
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-/* This YACC program is for recognizing variable declarations */
-void yyerror(const char *s);
-int yylex(void);
+extern int yylex();
+void yyerror(const char *msg);
+
 %}
 
-%token ID INT FLOAT DOUBLE
-
-%%
-
-D: T L '\n'         { printf("Valid declaration.\n"); }
- ;
-
-L: L ',' ID         { /* multiple identifiers */ }
- | ID               { /* single identifier */ }
- ;
-
-T: INT              { printf("Type: int\n"); }
- | FLOAT            { printf("Type: float\n"); }
- | DOUBLE           { printf("Type: double\n"); }
- ;
-
-%%
-
-extern FILE *yyin;
-
-int main() {
-    printf("Enter a declaration:\n");
-    yyparse();
-    return 0;
+%union {
+    char *str;
 }
 
-void yyerror(const char *s) {
-    fprintf(stderr, "Error: %s\n", s);
+%token <str> IDENTIFIER
+
+%%
+start:
+    IDENTIFIER '\n' {
+        printf("Valid variable: %s\n", $1);
+        free($1);  // clean up strdup memory
+    }
+    ;
+%%
+
+int main() {
+    printf("Enter a variable name:\n");
+    return yyparse();
+}
+
+void yyerror(const char *msg) {
+    printf("Invalid variable name\n");
 }
 
 ```

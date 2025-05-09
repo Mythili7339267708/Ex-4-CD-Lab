@@ -67,7 +67,7 @@ start:
 %%
 
 int main() {
-    printf("Enter a variable name:\n");
+    printf("Enter a declaration:\n");
     return yyparse();
 }
 
